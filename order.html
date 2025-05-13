@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Order Page - Prime Mart</title>
+ 
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom right, #6a1b9a, #8e24aa);
+      margin: 0;
+      padding: 20px;
+    }
+    .order-container {
+      background: white;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .order-container img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .total {
+      font-weight: bold;
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    .submit-btn {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .submit-btn:hover {
+      background-color: #45a049;
+    }
+    .payment-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    .payment-section h3 {
+      margin-top: 0;
+    }
+    #message {
+      margin: 10px 0;
+      padding: 8px;
+      border-radius: 4px;
+    }
+    .thumbnail {
+      max-width: 100px;
+      max-height: 100px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    #imagePreview {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      text-align: center;
+    }
+    #imagePreview img {
+      max-width: 90%;
+      max-height: 90%;
+      margin-top: 5%;
+    }
+    #closePreview {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      color: white;
+      font-size: 30px;
+      cursor: pointer;
+    }
+    .back-link{
+      display: inline-block;
+      margin-bottom: 15px;
+      color: #4CAF50;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .back-link:hover{
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+ 
+<div class="order-container">
+  <a href="index.html" class="back-link">back to home</a>
+  <h2>Place Your Order</h2>
+  <img id="productImage" src="" alt="Product Image">
+  
+  <label>Product:</label>
+  <input type="text" id="productName" readonly>
+  
+  <label>Price per item ($):</label>
+  <input type="number" id="productPrice" readonly>
+  
+  <label>Quantity:</label>
+  <input type="number" id="quantity" value="1" min="1">
+  
+  <div class="total">Total Price: $<span id="totalPrice">0</span></div>
+  
+  <label>Address:</label>
+  <input type="text" id="address" placeholder="Enter your address">
+  
+  <div class="payment-section">
+    <h3>Payment Verification</h3>
+    <label>Payment Method:</label>
+    <select id="paymentMethod">
+      <option>Credit Card</option>
+      <option>PayPal</option>
+      <option>Bank Transfer</option>
+    </select>
+    
+    <label>Upload Payment Proof (Screenshot/Receipt):</label>
+    <input type="file" id="payment-verification" accept="image/png, image/jpeg, image/gif, application/pdf">
+    
+    <label>Or Payment Link:</label>
+    <input type="text" id="paymentLink" placeholder="https://payment-provider.com/your-receipt">
+    
+    <div id="message"></div>
+    
+    <button type="button" onclick="verifyPayment()" style="margin-top: 10px;">Verify Payment</button>
+  </div>
+  
+  <button class="submit-btn" id="submitOrder">Submit Order</button>
+</div>
+
+<div id="imagePreview">
+  <span id="closePreview">&times;</span>
+  <img id="previewImage" src="">
+</div>
+
+<script>
+  // Check if user is logged in
+  const storedUser = JSON.parse(localStorage.getItem('primeMartUser'));
+  if (!storedUser) {
+    window.location.href = 'login.html';
+  }
+
+  // Get product data from localStorage
+  const productData = JSON.parse(localStorage.getItem('selectedProduct'));
+  
+  if (productData) {
+    document.getElementById('productImage').src = productData.image;
+    document.getElementById('productName').value = productData.title;
+    document.getElementById('productPrice').value = productData.price;
+    document.getElementById('totalPrice').textContent = productData.price;
+  } else {
+    window.location.href = 'index.html';
+  }
+
+  // Calculate total price when quantity changes
+  const quantityInput = document.getElementById('quantity');
+  const priceInput = document.getElementById('productPrice');
+  const totalPriceSpan = document.getElementById('totalPrice');
+
+  quantityInput.addEventListener('input', () => {
+    const quantity = parseInt(quantityInput.value) || 0;
+    const price = parseFloat(priceInput.value) || 0;
+    const total = quantity * price;
+    totalPriceSpan.textContent = total.toFixed(2);
+  });
+
+  // Image preview functionality
+  function previewImage(src) {
+    document.getElementById('previewImage').src = src;
+    document.getElementById('imagePreview').style.display = 'block';
+  }
+
+  document.getElementById('closePreview').addEventListener('click', () => {
+    document.getElementById('imagePreview').style.display = 'none';
+  });
+
+  // Validate payment link against trusted domains
+  function validateLink(link, trustedDomains) {
+    try {
+      const url = new URL(link);
+      return trustedDomains.some(domain => url.hostname.includes(domain));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Verify payment details
+  function verifyPayment() {
+    const fileInput = document.getElementById("payment-verification");
+    const linkInput = document.getElementById("paymentLink").value.trim();
+    const messageDiv = document.getElementById('message');
+
+    const validFileTypes = ['image/png', 'image/jpeg', 'image/gif', 'application/pdf'];
+    const file = fileInput.files[0];
+
+    // Reset message
+    messageDiv.style.color = 'red';
+    messageDiv.textContent = '';
+
+    // Check file type if uploaded
+    if (file && !validFileTypes.includes(file.type)) {
+      messageDiv.textContent = 'Invalid file type. Use PNG, JPEG, GIF, or PDF.';
+      return false;
+    }
+
+    // Check if trusted link
+    const trustedDomains = ['apps.cbe.com.et', 'paypal.com', 'bank.com.et'];
+    if (linkInput && !validateLink(linkInput, trustedDomains)) {
+      messageDiv.textContent = 'Invalid link. Must be from a trusted domain.';
+      return false;
+    }
+
+    if (!file && !linkInput) {
+      messageDiv.textContent = 'Please provide a screenshot or payment link.';
+      return false;
+    }
+
+    messageDiv.style.color = 'green';
+    messageDiv.textContent = 'Payment verified!';
+    return true;
+  }
+
+  // Handle order submission
+  document.getElementById('submitOrder').addEventListener('click', () => {
+    if (!verifyPayment()) {
+      return;
+    }
+
+    const fileInput = document.getElementById("payment-verification");
+    const linkInput = document.getElementById("paymentLink").value.trim();
+    const file = fileInput.files[0];
+    const messageDiv = document.getElementById('message');
+
+    const name = storedUser.name || storedUser.username;
+    const address = document.getElementById("address").value;
+    const quantity = parseInt(document.getElementById("quantity").value);
+    const productName = document.getElementById("productName").value;
+    const productPrice = parseFloat(document.getElementById("productPrice").value);
+    const total = quantity * productPrice;
+
+    if (!name || !address || !quantity || quantity < 1) {
+      messageDiv.style.color = 'red';
+      messageDiv.textContent = 'Please fill in all required details.';
+      return;
+    }
+
+    const handleOrder = (paymentProofHTML) => {
+      const order = {
+        customer: name,
+        address: address,
+        product: productName,
+        quantity: quantity,
+        price: productPrice,
+        total: total,
+        paymentMethod: document.getElementById("paymentMethod").value,
+        paymentProof: paymentProofHTML,
+        date: new Date().toLocaleString()
+      };
+      
+      // Save order to localStorage
+      localStorage.setItem('primeMartOrder', JSON.stringify(order));
+      alert('Order placed successfully!');
+      window.location.href = 'index.html';
+    };
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const fileHTML = file.type === 'application/pdf'
+          ? `<a href="${e.target.result}" target="_blank" style="color: blue;">View PDF Proof</a>`
+          : `<img src='${e.target.result}' class='thumbnail' onclick='previewImage("${e.target.result}")'/>`;
+        handleOrder(fileHTML);
+      };
+      reader.readAsDataURL(file);
+    } else if (linkInput) {
+      const linkHTML = `<a href="${linkInput}" target="_blank" style="color: blue; text-decoration: underline;">View Payment Proof</a>`;
+      handleOrder(linkHTML);
+    }
+  });
+</script>
+</body>
+</html>
