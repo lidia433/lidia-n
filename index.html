@@ -257,7 +257,8 @@
 <script>
   // Check if user is logged in
   const storedUser = JSON.parse(localStorage.getItem('primeMartUser'));
-  if (!storedUser) {
+  const isLoggedIn=localStorage.getItem('isLoggedIn')=='true';
+  if (!storedUser||!isLoggedIn) {
     window.location.href = 'login.html';
   } else {
     document.getElementById('welcomeMessage').textContent = `Welcome, ${storedUser.name || storedUser.username}!`;
@@ -364,7 +365,7 @@
   // Logout button functionality
   document.querySelector('a[href="login.html"]').addEventListener('click', (e) => {
     e.preventDefault();
-    localStorage.removeItem('primeMartUser');
+    localStorage.removeItem('isLoggedIn');
     window.location.href = 'login.html';
   });
 </script>
