@@ -357,7 +357,8 @@ width: 200%;
 
 if (storedUser && storedUser.username === username && storedUser.password === password) {
                 alert('Login successful!');
-                window.location.href = 'index.html';
+                window.location.href = 'index.html';isLoggedIn','true');
+    localStorage.setItem('
             } else {
                 alert('Incorrect username or password. Please try again or sign up if you don\'t have an account.');
             }
