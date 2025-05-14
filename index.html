@@ -257,7 +257,7 @@
 <script>
   // Check if user is logged in
   const storedUser = JSON.parse(localStorage.getItem('primeMartUser'));
-  const isLoggedIn=localStorage.getItem('isLoggedIn')=='true';
+  const isLoggedIn=localStorage.getItem('isLoggedIn')==='true';
   if (!storedUser||!isLoggedIn) {
     window.location.href = 'login.html';
   } else {
